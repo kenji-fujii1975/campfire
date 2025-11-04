@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Calm Campfire – Big Flames & Many Logs</title>
+  <title>Calm Campfire – Image Logs & Center Art</title>
   <style>
     html, body { height: 100%; margin: 0; background: #0b0e14; }
     body { overflow: hidden; -webkit-user-select: none; user-select: none; }
@@ -31,10 +31,8 @@
     </div>
 
     <div class="footer">
-      <div class="hint">薪をタップして掴み、中央の焚き火にスワイプで投入 → パチパチ。何もしなくても燃え続けます。</div>
-      <div style="margin-top:8px">
-        <button class="btn" id="resetBtn">Reset</button>
-      </div>
+      <div class="hint">薪（画像）をタップして掴み、中央の焚き火画像へスワイプで投入 → パチパチ音＆炎UP</div>
+      <div style="margin-top:8px"><button class="btn" id="resetBtn">Reset</button></div>
     </div>
   </div>
 
@@ -47,62 +45,48 @@
     const hudClock = document.getElementById('clock');
     const resetBtn = document.getElementById('resetBtn');
 
-    // ---- Parameters ----
-    const BASE_HEAT = 10;
-    const MAX_HEAT = 140;
-    const FEED_BOOST = 40;        // 強めブースト（薪1本）
-    const DECAY_TAU = 33000;      // 33s gentle decay
-    const IDLE_CLAMP_S = 60;
-    const IDLE_CLAMP_HEAT = 5;
+    // === 画像 ===
+    // 同じフォルダに makikumi.png（中央） と maki.png（薪）を置いてください
+    const imgCamp = new Image(); imgCamp.src = 'makikumi.png';
+    const imgLog  = new Image(); imgLog.src  = 'maki.png';
 
-    const SKY_GRADIENT = true;
-    const GROUND_DRAW = true;
-    const DRAW_LOGS = true;
+    // === パラメータ / 仕様 ===
+    const BASE_HEAT = 12, MAX_HEAT = 160, FEED_BOOST = 42, DECAY_TAU = 33000, IDLE_CLAMP_S=60, IDLE_CLAMP_HEAT=6;
+    const SKY_GRADIENT = true, GROUND_DRAW = true;
 
-    // 焚き火を画面中央に
-    function fireAnchor(f){ return { x: f.W/2, y: f.H*0.5 }; }
-
-    // ---- Utils ----
     function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
     function formatTime(s){ const m=Math.floor(s/60); const ss=s%60; return m+':'+String(ss).padStart(2,'0'); }
     function dist(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return Math.hypot(dx,dy); }
+    function fireAnchor(f){ return { x: f.W/2, y: f.H*0.5 }; }
 
-    // ---- WebAudio crackle ----
-    let AC = null, master = null;
-    let bgTimer = null;
+    // === WebAudio: パチパチ音（iOS対応の合成音） ===
+    let AC=null, master=null, bgTimer=null;
     function initAudio(){
       if (AC) return;
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      AC = new AudioCtx();
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      AC = new Ctx();
       master = AC.createGain();
-      master.gain.value = 0.18; // 全体音量
+      master.gain.value = 0.18;
       master.connect(AC.destination);
-      // 背景クラックル（ランダムなノイズバースト）
+      // 背景の細かなクラックル
       bgTimer = setInterval(()=>{
-        const vol = 0.01 + Math.random()*0.02;
-        const dur = 0.02 + Math.random()*0.05;
-        playCrackle(vol, dur);
-      }, 120 + Math.random()*200);
+        playCrackle(0.02 + Math.random()*0.03, 0.03 + Math.random()*0.05);
+      }, 130 + Math.random()*220);
     }
-    function playCrackle(volume=0.05, duration=0.06){
-      if (!AC) return;
-      const sr = AC.sampleRate;
-      const len = Math.max(1, Math.floor(duration * sr));
-      const buf = AC.createBuffer(1, len, sr);
-      const data = buf.getChannelData(0);
-      // ホワイトノイズ → 短い指数減衰でパチッ
-      let v = 0;
-      for (let i=0;i<len;i++){
-        const n = (Math.random()*2-1);
-        v = 0.6*v + 0.4*n; // 少し丸めたノイズ
-        const env = Math.exp(-6*i/len); // 速い減衰
-        data[i] = v * env;
+    function playCrackle(volume=0.06, duration=0.06){
+      if(!AC) return;
+      const sr=AC.sampleRate, len=Math.max(1, Math.floor(duration*sr));
+      const buf=AC.createBuffer(1,len,sr), d=buf.getChannelData(0);
+      let v=0;
+      for(let i=0;i<len;i++){
+        const n=(Math.random()*2-1);
+        v = 0.6*v + 0.4*n;               // ちょい丸いノイズ
+        const env = Math.exp(-6*i/len);  // 短い減衰
+        d[i] = v * env;
       }
       const src = AC.createBufferSource();
       src.buffer = buf;
       const gain = AC.createGain();
-      gain.gain.value = 0;
-      // アタック速く→減衰
       const t = AC.currentTime;
       gain.gain.setValueAtTime(0, t);
       gain.gain.linearRampToValueAtTime(volume, t + Math.min(0.01, duration*0.2));
@@ -111,61 +95,45 @@
       src.start();
     }
     function unlockAudio(){
-      try {
-        initAudio();
-        AC && AC.resume && AC.resume();
-      } catch(e){}
+      try { initAudio(); AC && AC.resume && AC.resume(); } catch(e){}
     }
 
+    // === 炎シミュレーション ===
     class Fire {
-      constructor(ctx, width, height, dpr){
-        this.ctx = ctx; this.W = width; this.H = height; this.dpr = dpr;
-        this.t = 0;
-        this.fuelStock = 0;
-        this.baseHeat = BASE_HEAT;
-        this.boostHeat0 = 0;
-        this.lastFeedAt = performance.now();
-
-        // gentle wind
-        this.wind = 0; this.windPhase = Math.random()*Math.PI*2;
-
-        // particles（多め＆大きめ）
-        this.particles = []; this.pool = []; this.maxParticles = 520;
-        this.spawnAcc = 0;
+      constructor(ctx,w,h,dpr){
+        this.ctx=ctx; this.W=w; this.H=h; this.dpr=dpr;
+        this.t=0; this.baseHeat=BASE_HEAT; this.boostHeat0=0; this.lastFeedAt=performance.now(); this.fuelStock=0;
+        this.particles=[]; this.pool=[]; this.maxParticles=540; this.spawnAcc=0;
+        this.wind=0; this.windPhase=Math.random()*Math.PI*2;
       }
-
       currentHeat(now){
-        const elapsed = now - this.lastFeedAt;
-        let heat = this.baseHeat + this.boostHeat0 * Math.exp(-elapsed / DECAY_TAU);
-        if (elapsed > IDLE_CLAMP_S*1000) heat = Math.min(heat, Math.max(IDLE_CLAMP_HEAT, BASE_HEAT));
+        const el=now-this.lastFeedAt;
+        let heat=this.baseHeat + this.boostHeat0*Math.exp(-el/DECAY_TAU);
+        if(el>IDLE_CLAMP_S*1000) heat=Math.min(heat, Math.max(IDLE_CLAMP_HEAT, BASE_HEAT));
         return clamp(heat, BASE_HEAT, MAX_HEAT);
       }
-
-      addFuel(amount=FEED_BOOST){
-        const now = performance.now();
-        const elapsed = now - this.lastFeedAt;
-        const remain = this.boostHeat0 * Math.exp(-elapsed / DECAY_TAU);
-        this.boostHeat0 = remain + amount;
-        this.lastFeedAt = now;
-        this.fuelStock = clamp(this.fuelStock + 14, 0, 100);
-        for(let i=0;i<36;i++) this.spawnFlame(true);
-        // パチパチを強めで
-        playCrackle(0.12, 0.08);
-        playCrackle(0.06, 0.05);
+      addFuel(a=FEED_BOOST){
+        const now=performance.now();
+        const el=now-this.lastFeedAt;
+        const remain=this.boostHeat0*Math.exp(-el/DECAY_TAU);
+        this.boostHeat0=remain+a;
+        this.lastFeedAt=now;
+        this.fuelStock = clamp(this.fuelStock+14, 0, 100);
+        for(let i=0;i<40;i++) this.spawnFlame(true);
+        // ワンショットのパチパチ
+        playCrackle(0.12, 0.10);
+        playCrackle(0.07, 0.06);
       }
-
       update(dt){
-        const now = performance.now();
+        const now=performance.now();
         this.t += dt;
-        // very slow wind
         this.windPhase += dt*0.00022;
-        this.wind = Math.sin(this.windPhase)*0.18 + Math.sin(this.windPhase*0.6)*0.08;
+        this.wind = Math.sin(this.windPhase)*0.16 + Math.sin(this.windPhase*0.6)*0.07;
 
-        const heat = this.currentHeat(now);
+        const heat=this.currentHeat(now);
         this.fuelStock = clamp(this.fuelStock - (0.001 + heat*0.00007)*dt, 0, 100);
 
-        // bigger & more flames when hot
-        const spawnRate = 1.5 + heat*0.2;
+        const spawnRate = 1.6 + heat*0.22;
         this.spawnAcc += spawnRate * (dt/16.67);
         while(this.spawnAcc >= 1){
           this.spawnFlame(false);
@@ -173,103 +141,101 @@
           this.spawnAcc -= 1;
         }
 
-        // particles
+        // パーティクル
         for(let i=this.particles.length-1;i>=0;i--){
-          const p = this.particles[i];
+          const p=this.particles[i];
           p.life += dt;
           if(p.type==='flame'){
-            p.vx += this.wind * 0.0016 * dt;
-            p.vy -= 0.00045 * dt;
-            p.x += p.vx * (dt*0.05);
-            p.y += p.vy * (dt*0.05);
+            p.vx += this.wind*0.0015*dt;
+            p.vy -= 0.00042*dt;
+            p.x  += p.vx*(dt*0.05);
+            p.y  += p.vy*(dt*0.05);
             p.alpha = Math.max(0, 0.94 - p.life/p.max);
             p.size *= 0.998;
             if(p.life>p.max || p.alpha<=0 || p.y < this.H*0.05) this.kill(i);
-          }else{
-            p.vx += this.wind*0.0009*dt; p.vy -= 0.00018*dt;
-            p.x += p.vx * (dt*0.05); p.y += p.vy * (dt*0.05);
+          } else {
+            p.vx += this.wind*0.0009*dt;
+            p.vy -= 0.00018*dt;
+            p.x  += p.vx*(dt*0.05);
+            p.y  += p.vy*(dt*0.05);
             p.alpha = Math.max(0, 1 - p.life/p.max);
             if(p.life>p.max || p.alpha<=0 || p.y < -12) this.kill(i);
           }
         }
 
-        // 背景クラックルも熱に応じて少し強く
-        if (AC && master) {
-          master.gain.value = 0.12 + (heat/MAX_HEAT)*0.18; // 0.12～0.30
-        }
+        // 背景クラックルの音量を熱で変調
+        if (AC && master) master.gain.value = 0.12 + (heat/MAX_HEAT)*0.18;
 
         return { heat, fuel: this.fuelStock, seconds: Math.floor(this.t/1000) };
       }
-
       spawnFlame(puff){
         if(this.particles.length >= this.maxParticles) return;
         const p = this.pool.pop() || {};
-        const anchor = fireAnchor(this);
-        const spread = 34 + this.wind*24;
-        p.x = anchor.x + (Math.random()-0.5)*spread;
-        p.y = anchor.y + (Math.random()-0.5)*6;
-        const up = (puff?2.3:1.7) + Math.random()*0.7; // ゆるやかめ
+        const a = fireAnchor(this);
+        const spread = 36 + this.wind*24;
+        p.x = a.x + (Math.random()-0.5)*spread;
+        p.y = a.y + (Math.random()-0.5)*6;
+        const up = (puff?2.2:1.7) + Math.random()*0.7;
         p.vx = this.wind*(0.28+Math.random()*0.34) + (Math.random()-0.5)*0.16;
         p.vy = -up - Math.random()*0.45;
-        p.life = 0;
-        p.max = (puff?66:52) + Math.random()*26;       // 長寿命＝大きくゆっくり
-        p.size = (puff?28:20) + Math.random()*14;      // サイズ拡大
+        p.life=0;
+        p.max = (puff?72:58) + Math.random()*28;
+        p.size = (puff?34:24) + Math.random()*16;
         p.h = 18 + Math.random()*22; p.s = 85 + Math.random()*10; p.l = 52 + Math.random()*8;
         p.alpha = 0.9; p.type='flame';
         this.particles.push(p);
       }
-
       spawnEmber(){
         if(this.particles.length >= this.maxParticles) return;
         const e = this.pool.pop() || {};
-        const anchor = fireAnchor(this);
-        e.x = anchor.x + (Math.random()-0.5)*30;
-        e.y = anchor.y - 10 + (Math.random()-0.5)*10;
+        const a = fireAnchor(this);
+        e.x = a.x + (Math.random()-0.5)*30;
+        e.y = a.y - 10 + (Math.random()-0.5)*10;
         e.vx = this.wind*(0.42+Math.random()*0.4) + (Math.random()-0.5)*0.2;
         e.vy = -1.2 - Math.random()*0.6;
-        e.life = 0; e.max = 180 + Math.random()*150; e.size = 2 + Math.random()*2.2;
-        e.alpha = 1; e.type='ember';
+        e.life=0; e.max=200 + Math.random()*160; e.size=2 + Math.random()*2.2;
+        e.alpha=1; e.type='ember';
         this.particles.push(e);
       }
-
       kill(i){
-        const p = this.particles[i];
+        const p=this.particles[i];
         this.pool.push(p);
         this.particles[i] = this.particles[this.particles.length-1];
         this.particles.pop();
       }
-
-      draw(){
+      draw(centerScale){
         const g=this.ctx, W=this.W, H=this.H;
+
         if (SKY_GRADIENT) {
-          const sky = g.createLinearGradient(0,0,0,H);
+          const sky=g.createLinearGradient(0,0,0,H);
           sky.addColorStop(0,'#05060a'); sky.addColorStop(1,'#0b0e14');
           g.fillStyle=sky; g.fillRect(0,0,W,H);
         }
         if (GROUND_DRAW) {
-          g.fillStyle='#151512'; g.fillRect(0, H*0.8, W, H*0.2);
+          g.fillStyle='#151512';
+          g.fillRect(0, H*0.8, W, H*0.2);
         }
 
+        // 周囲の薪（画像）を背面に描画
         drawLooseLogs();
 
-        if (DRAW_LOGS) {
-          const a = fireAnchor(this);
-          g.save(); g.translate(a.x, a.y+0.03*H); g.rotate(-0.15);
-          roundRect(g,-120,-14,240,28,14); g.fillStyle='#3a2f21'; g.fill(); g.restore();
-          g.save(); g.translate(a.x, a.y+0.03*H); g.rotate(0.25);
-          roundRect(g,-112,-13,224,26,13); g.fillStyle='#3b2a1f'; g.fill(); g.restore();
-        }
+        // 中央の焚き火画像（レスポンシブB：画面に合わせて比率維持）
+        const a = fireAnchor(this);
+        const baseW = Math.min(W,H) * 0.55 * centerScale;
+        const aspect = imgCamp.naturalHeight ? (imgCamp.naturalWidth / imgCamp.naturalHeight) : 1;
+        const w = baseW, h = w / (aspect || 1);
+        g.save(); g.translate(a.x, a.y); g.drawImage(imgCamp, -w/2, -h/2, w, h); g.restore();
 
-        // flames & embers
+        // 炎・火の粉（画像の上に重ねる）
         g.globalCompositeOperation='lighter';
         for(let i=0;i<this.particles.length;i++){
           const p=this.particles[i];
           if(p.type==='flame'){
-            const grad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);
+            const rad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);
             const c1=`hsla(${p.h}, ${p.s}%, ${p.l}%, ${p.alpha})`;
             const c2=`hsla(${Math.max(5,p.h-10)}, ${p.s}%, ${Math.max(30,p.l-10)}%, 0)`;
-            grad.addColorStop(0,c1); grad.addColorStop(1,c2);
-            g.fillStyle=grad; g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2); g.fill();
+            rad.addColorStop(0,c1); rad.addColorStop(1,c2);
+            g.fillStyle=rad; g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2); g.fill();
           }else{
             g.globalAlpha = p.alpha*0.85;
             g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2);
@@ -279,48 +245,46 @@
         }
         g.globalCompositeOperation='source-over';
 
-        // bigger glow
-        const a = fireAnchor(this);
-        const glow=g.createRadialGradient(a.x,a.y,0,a.x,a.y,170);
+        // 余光
+        const glow=g.createRadialGradient(a.x,a.y,0,a.x,a.y,180*centerScale);
         glow.addColorStop(0,'rgba(255,180,80,0.08)');
         glow.addColorStop(1,'rgba(255,180,80,0)');
-        g.fillStyle=glow; g.beginPath(); g.arc(a.x,a.y,170,0,Math.PI*2); g.fill();
+        g.fillStyle=glow; g.beginPath(); g.arc(a.x,a.y,180*centerScale,0,Math.PI*2); g.fill();
       }
     }
 
-    // ---- Loose logs to drag ----
+    // === 落ちている薪（画像） ===
     const looseLogs = [];
-    const LOG_MIN = 16, LOG_MAX = 64; // 大きい薪も混ぜる
-    const PICK_RADIUS = 30;
-    const CONSUME_RADIUS = 110;
+    let LOG_BASE = 0;                 // 画面サイズから決まる基準幅
+    const PICK_RADIUS = 34;
+    let CONSUME_RADIUS = 120;         // 投入判定（画面サイズに応じ再計算）
 
-    function spawnLooseLogs(fire, n=24){ // 以前の3倍
+    function spawnLooseLogs(fire, n=24){
       looseLogs.length = 0;
       const a = fireAnchor(fire);
-      const ringR = Math.min(fire.W, fire.H) * 0.34;
+      const ringR = Math.min(fire.W, fire.H) * 0.36;
       for(let i=0;i<n;i++){
-        const ang = (i/n)*Math.PI*2 + Math.random()*0.5;
-        const r = ringR * (0.72 + Math.random()*0.5);
+        const ang = (i/n)*Math.PI*2 + Math.random()*0.6;
+        const r   = ringR*(0.7 + Math.random()*0.55);
         const x = a.x + Math.cos(ang)*r;
         const y = a.y + Math.sin(ang)*r;
-        const w = LOG_MIN + Math.random()*(LOG_MAX-LOG_MIN);
-        looseLogs.push({ x, y, w, grabbed:false, ox:0, oy:0 });
+        const scale = 0.7 + Math.random()*1.6;       // 大小ランダム
+        const rot   = (Math.random()*0.6 - 0.3);
+        looseLogs.push({ x,y,scale,rot, grabbed:false, ox:0, oy:0 });
       }
     }
 
     function drawLooseLogs(){
-      g.save();
-      for(const log of looseLogs){
+      for(const L of looseLogs){
         g.save();
-        g.translate(log.x, log.y);
-        const rot = (log.rot ??= (Math.random()*0.6-0.3));
-        g.rotate(rot);
-        roundRect(g, -log.w, -log.w*0.18, log.w*2, log.w*0.36, log.w*0.18);
-        g.fillStyle = '#4a3a28';
-        g.fill();
+        g.translate(L.x, L.y);
+        g.rotate(L.rot);
+        const w = LOG_BASE * L.scale;
+        const aspect = imgLog.naturalHeight ? (imgLog.naturalHeight / imgLog.naturalWidth) : 0.35;
+        const h = w * (aspect || 0.35);
+        g.drawImage(imgLog, -w/2, -h/2, w, h);
         g.restore();
       }
-      g.restore();
     }
 
     function pickLog(x,y){
@@ -333,80 +297,68 @@
       return k;
     }
 
-    // ---- Canvas helpers ----
-    function roundRect(g,x,y,w,h,r){
-      g.beginPath(); g.moveTo(x+r,y);
-      g.arcTo(x+w,y, x+w,y+h, r);
-      g.arcTo(x+w,y+h, x,y+h, r);
-      g.arcTo(x,y+h, x,y, r);
-      g.arcTo(x,y, x+w,y, r);
-      g.closePath();
-    }
-
-    // ---- Init & Loop ----
+    // === Canvasサイズ調整 ===
     function fit(){
       const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));
       const rect=canvas.getBoundingClientRect();
       canvas.width=Math.floor(rect.width*dpr);
       canvas.height=Math.floor(rect.height*dpr);
       g.setTransform(dpr,0,0,dpr,0,0);
-      if (fire){
+      if(fire){
         fire.W=rect.width; fire.H=rect.height; fire.dpr=dpr;
-        if (looseLogs.length===0) spawnLooseLogs(fire);
+        if(looseLogs.length===0) spawnLooseLogs(fire);
+        LOG_BASE = Math.min(fire.W, fire.H) * 0.18;
+        CONSUME_RADIUS = Math.min(fire.W, fire.H) * 0.18;
       }
     }
 
     const r0 = document.getElementById('root').getBoundingClientRect();
-    const dpr0 = Math.max(1, Math.min(3, window.devicePixelRatio||1));
-    canvas.width = Math.floor(r0.width*dpr0); canvas.height = Math.floor(r0.height*dpr0);
+    const dpr0=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+    canvas.width=Math.floor(r0.width*dpr0); canvas.height=Math.floor(r0.height*dpr0);
     g.setTransform(dpr0,0,0,dpr0,0,0);
 
     let fire = new Fire(g, r0.width, r0.height, dpr0);
     spawnLooseLogs(fire);
 
-    let last = performance.now();
+    let centerScale=1.0;
+    let last=performance.now();
     function loop(t){
-      const dt = Math.min(40, t-last); last = t;
-      const state = fire.update(dt);
-      fire.draw();
+      const dt=Math.min(40, t-last); last=t;
+      const state=fire.update(dt);
+      fire.draw(centerScale);
       hudFuel.textContent = Math.round(state.fuel);
       hudHeat.textContent = Math.round(state.heat);
       hudClock.textContent = formatTime(state.seconds);
       requestAnimationFrame(loop);
     }
     requestAnimationFrame(loop);
+
     window.addEventListener('resize', fit, { passive:true });
 
-    // ---- Input (drag logs) ----
-    const touch = { id:null, grabbing:-1, dx:0, dy:0 };
-    function beginGesture(){
-      unlockAudio(); // iOSで初回タップ時に音声を解禁
-    }
+    // === 入力（薪のドラッグ）＆音声解禁 ===
+    const touch={ id:null, grabbing:-1 };
+    function beginGesture(){ unlockAudio(); }
 
     canvas.addEventListener('touchstart', (e)=>{
-      const t = e.changedTouches[0];
-      const rect = canvas.getBoundingClientRect();
-      const x = t.clientX - rect.left, y = t.clientY - rect.top;
-      const i = pickLog(x,y);
+      const t=e.changedTouches[0];
+      const rect=canvas.getBoundingClientRect();
+      const x=t.clientX-rect.left, y=t.clientY-rect.top;
+      const i=pickLog(x,y);
+      beginGesture();
       if(i>=0){
         e.preventDefault();
-        beginGesture();
-        touch.id = t.identifier; touch.grabbing = i;
-        looseLogs[i].grabbed = true;
-        looseLogs[i].ox = x - looseLogs[i].x;
-        looseLogs[i].oy = y - looseLogs[i].y;
-      } else {
-        beginGesture(); // 空タップでも解禁
+        touch.id=t.identifier; touch.grabbing=i;
+        const L=looseLogs[i]; L.grabbed=true; L.ox = x-L.x; L.oy = y-L.y;
       }
     }, { passive:false });
 
     canvas.addEventListener('touchmove', (e)=>{
       for(const t of e.changedTouches){
-        if (touch.id !== t.identifier) continue;
-        const rect = canvas.getBoundingClientRect();
-        const x = t.clientX - rect.left, y = t.clientY - rect.top;
-        if (touch.grabbing>=0){
-          const L = looseLogs[touch.grabbing];
+        if(t.identifier!==touch.id) continue;
+        const rect=canvas.getBoundingClientRect();
+        const x=t.clientX-rect.left, y=t.clientY-rect.top;
+        if(touch.grabbing>=0){
+          const L=looseLogs[touch.grabbing];
           L.x = x - L.ox; L.y = y - L.oy;
           e.preventDefault();
         }
@@ -415,20 +367,20 @@
 
     canvas.addEventListener('touchend', (e)=>{
       for(const t of e.changedTouches){
-        if (t.identifier !== touch.id) continue;
+        if(t.identifier!==touch.id) continue;
         finishGrab();
       }
     });
 
     canvas.addEventListener('mousedown', (e)=>{
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left, y = e.clientY - rect.top;
-      const i = pickLog(x,y);
+      const rect=canvas.getBoundingClientRect();
+      const x=e.clientX-rect.left, y=e.clientY-rect.top;
+      const i=pickLog(x,y);
       beginGesture();
       if(i>=0){
         e.preventDefault();
-        touch.id = 'mouse'; touch.grabbing = i;
-        const L=looseLogs[i]; L.grabbed=true; L.ox = x-L.x; L.oy=y-L.y;
+        touch.id='mouse'; touch.grabbing=i;
+        const L=looseLogs[i]; L.grabbed=true; L.ox=x-L.x; L.oy=y-L.y;
         window.addEventListener('mousemove', onMouseMove, { passive:false });
         window.addEventListener('mouseup', onMouseUp);
       }
@@ -436,10 +388,10 @@
 
     function onMouseMove(e){
       if (touch.grabbing<0) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left, y = e.clientY - rect.top;
-      const L = looseLogs[touch.grabbing];
-      L.x = x - L.ox; L.y = y - L.oy;
+      const rect=canvas.getBoundingClientRect();
+      const x=e.clientX-rect.left, y=e.clientY-rect.top;
+      const L=looseLogs[touch.grabbing];
+      L.x=x-L.ox; L.y=y-L.oy;
       e.preventDefault();
     }
     function onMouseUp(){
@@ -449,27 +401,27 @@
     }
 
     function finishGrab(){
-      const idx = touch.grabbing;
-      if (idx>=0){
-        const a = fireAnchor(fire);
-        const L = looseLogs[idx];
-        if (dist(L.x,L.y,a.x,a.y) <= CONSUME_RADIUS){
+      const idx=touch.grabbing;
+      if(idx>=0){
+        const a=fireAnchor(fire);
+        const L=looseLogs[idx];
+        if(dist(L.x,L.y,a.x,a.y)<= CONSUME_RADIUS){
           looseLogs.splice(idx,1);
           fire.addFuel(FEED_BOOST);
         } else {
-          L.grabbed = false;
+          L.grabbed=false;
         }
       }
       touch.id=null; touch.grabbing=-1;
     }
 
-    // reset
+    // Reset
     resetBtn.addEventListener('click', ()=>{
       fire = new Fire(g, fire.W, fire.H, fire.dpr);
       spawnLooseLogs(fire);
     });
 
-    // first fit
+    // 最初のサイズ調整
     requestAnimationFrame(fit);
   })();
   </script>
