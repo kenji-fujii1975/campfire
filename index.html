@@ -1,219 +1,71 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!doctype html>
+<html lang="ja">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Calm Campfire – Relaxation</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0b0e14; }
+    body { overflow: hidden; -webkit-user-select: none; user-select: none; }
+    #root { width: 100vw; height: 100vh; position: relative; touch-action: none; }
+    canvas { width: 100%; height: 100%; display: block; }
+    .hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; justify-content: space-between; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e6e6; pointer-events: none; }
+    .badge { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 6px 10px; font-size: 13px; }
+    .footer { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: 14px; color: #cfcfcf; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .hint { background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 14px; }
+    .btn { pointer-events: auto; background: #2a2f3a; border: 1px solid #3c4452; color: #e8eaed; padding: 8px 12px; border-radius: 12px; }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!doctype html&gt;</p>
-<p class="p1">&lt;html lang="ja"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="utf-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="apple-mobile-web-app-capable" content="yes"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="mobile-web-app-capable" content="yes"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Campfire – iOS Safari Web&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>html, body { height: 100%; margin: 0; background: #0b0e14; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body { overflow: hidden; -webkit-user-select: none; user-select: none; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>#root { width: 100vw; height: 100vh; position: relative; touch-action: none; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas { width: 100%; height: 100%; display: block; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; justify-content: space-between; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e6e6e6; pointer-events: none; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.badge { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 6px 10px; font-size: 13px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.footer { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; font-size: 14px; color: #cfcfcf; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hint { background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 14px; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn { pointer-events: auto; background: #2a2f3a; border: 1px solid #3c4452; color: #e8eaed; padding: 8px 12px; border-radius: 12px; }</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="root"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;canvas id="c"&gt;&lt;/canvas&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;audio id="crackle" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Bonfire.ogg" loop preload="auto"&gt;&lt;/audio&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="hud"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="display:flex; gap:12px; align-items:center;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="badge"&gt;&lt;span style="opacity:.8"&gt;Fuel: &lt;/span&gt;&lt;strong id="fuel"&gt;0&lt;/strong&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="badge"&gt;&lt;span style="opacity:.8"&gt;Wind: &lt;/span&gt;&lt;strong id="wind"&gt;0&lt;/strong&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="badge"&gt;&lt;span style="opacity:.8"&gt;Heat: &lt;/span&gt;&lt;strong id="heat"&gt;0&lt;/strong&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="opacity:.9" id="clock"&gt;0:00&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="footer"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="hint"&gt;Tap to add wood · Swipe ←/→ wind · Swipe ↑ puff&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="margin-top:8px"&gt;&lt;button class="btn" id="resetBtn"&gt;Reset&lt;/button&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>(function(){</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const canvas = document.getElementById('c');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const g = canvas.getContext('2d');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const audio = document.getElementById('crackle');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hudFuel = document.getElementById('fuel');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hudWind = document.getElementById('wind');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hudHeat = document.getElementById('heat');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const hudClock = document.getElementById('clock');</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const resetBtn = document.getElementById('resetBtn');</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function formatTime(s){ const m = Math.floor(s/60); const ss = s % 60; return m + ':' + String(ss).padStart(2,'0'); }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>class Game {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>constructor(ctx, width, height, dpr){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.ctx = ctx; this.W = width; this.H = height; this.dpr = dpr;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.time = 0; this.wind = 0; this.fuel = 40; this.heat = 0;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.pool = []; this.particles = []; this.maxParticles = 450;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.spawnCooldown = 0; this.holdToFeed = 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>addFuel(a=4){ this.fuel = Math.min(100, this.fuel + a); }</p>
-<p class="p1"><span class="Apple-converted-space">      </span>puffAir(){ for(let i=0;i&lt;60;i++) this.spawnFlame(true); this.heat += 6; }</p>
-<p class="p1"><span class="Apple-converted-space">      </span>spawnFlame(puff=false){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(this.particles.length &gt;= this.maxParticles) return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const p = this.pool.pop() || {};</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const cx = this.W/2; const baseY = this.H*0.82; const spread = Math.max(18, 60 + this.wind*24);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.x = cx + (Math.random()-0.5)*spread; p.y = baseY + (Math.random()-0.5)*6;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const up = puff ? 2.6 : 2.0 + Math.random()*0.9;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.vx = this.wind*(0.3 + Math.random()*0.5) + (Math.random()-0.5)*0.2;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.vy = -up - Math.random()*0.6;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.life = 0; p.max = 28 + Math.random()*22 + (puff?12:0);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.size = 12 + Math.random()*14 + (puff?6:0);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.h = 15 + Math.random()*25; p.s = 85 + Math.random()*10; p.l = 50 + Math.random()*10;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>p.alpha = 0.85; p.type = 'flame';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.particles.push(p);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>spawnEmber(){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(this.particles.length &gt;= this.maxParticles) return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const e = this.pool.pop() || {};</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const cx = this.W/2; const baseY = this.H*0.82;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>e.x = cx + (Math.random()-0.5)*30; e.y = baseY - 10 + (Math.random()-0.5)*10;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>e.vx = this.wind*(0.5 + Math.random()*0.6) + (Math.random()-0.5)*0.2;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>e.vy = -1.6 - Math.random()*0.8;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>e.life = 0; e.max = 120 + Math.random()*100; e.size = 2 + Math.random()*2; e.alpha=1; e.type='ember';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.particles.push(e);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>update(dt){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.time += dt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const targetHeat = Math.max(0, Math.min(100, this.fuel*1.2 + Math.abs(this.wind)*8));</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.heat += (targetHeat - this.heat) * 0.04;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const burnRate = 0.005 + this.heat * 0.0004;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.fuel = Math.max(0, this.fuel - burnRate*dt);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>this.spawnCooldown -= dt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const spawnInterval = 8 + (100 - this.heat) * 0.2;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>while(this.spawnCooldown &lt;= 0 &amp;&amp; this.heat &gt; 3){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>this.spawnFlame(false);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if(Math.random() &lt; 0.25) this.spawnEmber();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>this.spawnCooldown += spawnInterval;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>for(let i=this.particles.length-1;i&gt;=0;i--){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const p = this.particles[i];</p>
-<p class="p1"><span class="Apple-converted-space">          </span>p.life += dt*0.06;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if(p.type==='flame'){</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.vx += this.wind * 0.002 * dt; p.vy -= 0.0006 * dt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.x += p.vx * (dt*0.06); p.y += p.vy * (dt*0.06);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.alpha = Math.max(0, 0.9 - p.life/p.max); p.size *= 0.997;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if(p.life&gt;p.max || p.alpha&lt;=0 || p.y &lt; this.H*0.1) this.recycle(i);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.vx += this.wind * 0.001 * dt; p.vy -= 0.0002 * dt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.x += p.vx * (dt*0.06); p.y += p.vy * (dt*0.06);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>p.alpha = Math.max(0, 1 - p.life/p.max);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if(p.life&gt;p.max || p.alpha&lt;=0 || p.y &lt; -10) this.recycle(i);</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>if(this.holdToFeed&gt;0){ this.holdToFeed -= dt; if(this.holdToFeed&lt;0) this.holdToFeed=0; this.addFuel(0.02 * dt * 0.06); }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return { fuel:this.fuel, wind:this.wind, time:this.time, heat:this.heat };</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>recycle(i){ const p=this.particles[i]; this.pool.push(p); this.particles[i]=this.particles[this.particles.length-1]; this.particles.pop(); }</p>
-<p class="p1"><span class="Apple-converted-space">      </span>draw(){</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const g=this.ctx, W=this.W, H=this.H;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const sky=g.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#05060a'); sky.addColorStop(1,'#0b0e14'); g.fillStyle=sky; g.fillRect(0,0,W,H);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>g.fillStyle='#151512'; g.fillRect(0,H*0.8,W,H*0.2);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>g.save(); g.translate(W/2, H*0.83); g.rotate(-0.15); roundRect(g,-90,-10,180,20,10); g.fillStyle='#3a2f21'; g.fill(); g.restore();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>g.save(); g.translate(W/2, H*0.83); g.rotate(0.25); roundRect(g,-90,-10,180,20,10); g.fillStyle='#3b2a1f'; g.fill(); g.restore();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>g.globalCompositeOperation='lighter';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>for(let i=0;i&lt;this.particles.length;i++){</p>
-<p class="p1"><span class="Apple-converted-space">          </span>const p=this.particles[i];</p>
-<p class="p1"><span class="Apple-converted-space">          </span>if(p.type==='flame'){</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const grad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const c1=`hsla(${p.h}, ${p.s}%, ${p.l}%, ${p.alpha})`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const c2=`hsla(${Math.max(5,p.h-10)}, ${p.s}%, ${Math.max(30,p.l-10)}%, 0)`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>grad.addColorStop(0,c1); grad.addColorStop(1,c2);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>g.fillStyle=grad; g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2); g.fill();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>g.globalAlpha = p.alpha*0.8; g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2); g.fillStyle='#ffb347'; g.fill(); g.globalAlpha = 1;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>g.globalCompositeOperation='source-over';</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const glow=g.createRadialGradient(W/2,H*0.83,0,W/2,H*0.83,120); glow.addColorStop(0,'rgba(255,180,80,0.06)'); glow.addColorStop(1,'rgba(255,180,80,0)'); g.fillStyle=glow; g.beginPath(); g.arc(W/2,H*0.83,120,0,Math.PI*2); g.fill();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function roundRect(g,x,y,w,h,r){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function fit(){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const dpr=Math.max(1, Math.min(3, window.devicePixelRatio||1));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const rect = canvas.getBoundingClientRect();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>canvas.width = Math.floor(rect.width*dpr); canvas.height = Math.floor(rect.height*dpr);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>g.setTransform(dpr,0,0,dpr,0,0);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(game){ game.W = rect.width; game.H = rect.height; game.dpr = dpr; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const rootRect = document.getElementById('root').getBoundingClientRect();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const dpr0 = Math.max(1, Math.min(3, window.devicePixelRatio||1));</p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas.width = Math.floor(rootRect.width*dpr0); canvas.height = Math.floor(rootRect.height*dpr0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>g.setTransform(dpr0,0,0,dpr0,0,0);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>let game = new Game(g, rootRect.width, rootRect.height, dpr0);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>let last = performance.now(); let raf = 0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function loop(t){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const dt = Math.min(40, t - last); last = t;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const state = game.update(dt); game.draw();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>hudFuel.textContent = Math.round(state.fuel);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>hudWind.textContent = Math.round(state.wind*100)/100;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>hudHeat.textContent = Math.round(state.heat);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>hudClock.textContent = formatTime(Math.floor(state.time/1000));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>raf = requestAnimationFrame(loop);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>raf = requestAnimationFrame(loop);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>window.addEventListener('resize', fit, { passive:true });</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const gesture = { active:false, lastX:0, lastY:0, t0:0 };</p>
-<p class="p1"><span class="Apple-converted-space">    </span>function unlockAudio(){ if(audio &amp;&amp; audio.paused){ try{ audio.currentTime = 0; audio.play(); }catch(e){} } }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas.addEventListener('touchstart', function(e){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const t = e.touches[0]; gesture.active=true; gesture.lastX=t.clientX; gesture.lastY=t.clientY; gesture.t0=performance.now();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>game.holdToFeed = 9999; game.addFuel(2); unlockAudio();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}, { passive:false });</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas.addEventListener('touchmove', function(e){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>e.preventDefault();</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const t = e.touches[0]; const dx = t.clientX - gesture.lastX; const dy = t.clientY - gesture.lastY;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gesture.lastX = t.clientX; gesture.lastY = t.clientY;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>game.wind = clamp(game.wind + dx * 0.002, -1.2, 1.2);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if(dy &lt; -6) game.puffAir();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}, { passive:false });</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>canvas.addEventListener('touchend', function(){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gesture.active=false; game.holdToFeed = 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const dt = performance.now() - gesture.t0; if(dt &lt; 200) game.addFuel(6);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}, { passive:false });</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>resetBtn.addEventListener('click', function(){</p>
-<p class="p1"><span class="Apple-converted-space">      </span>game.fuel=40; game.wind=0; game.heat=0; game.time=0; game.particles.length=0; game.pool.length=0;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>requestAnimationFrame(fit);</p>
-<p class="p1"><span class="Apple-converted-space">  </span>})();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <div id="root">
+    <canvas id="c"></canvas>
+    <audio id="crackle" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Bonfire.ogg" loop preload="auto"></audio>
+    <div class="hud">
+      <div style="display:flex; gap:12px; align-items:center;">
+        <div class="badge"><span style="opacity:.8">Fuel: </span><strong id="fuel">0</strong></div>
+        <div class="badge"><span style="opacity:.8">Heat: </span><strong id="heat">0</strong></div>
+      </div>
+      <div style="opacity:.9" id="clock">0:00</div>
+    </div>
+    <div class="footer">
+      <div class="hint">Tap to add wood · 放置でも燃え続ける（30秒で徐々に縮小／1分で熾火に）</div>
+      <div style="margin-top:8px">
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    const canvas=document.getElementById('c');const g=canvas.getContext('2d',{alpha:true});
+    const audio=document.getElementById('crackle');const hudFuel=document.getElementById('fuel');
+    const hudHeat=document.getElementById('heat');const hudClock=document.getElementById('clock');
+    const resetBtn=document.getElementById('resetBtn');
+    const BASE_HEAT=8,MAX_HEAT=100,FEED_BOOST=28,DECAY_TAU=30000,IDLE_CLAMP_S=60,IDLE_CLAMP_HEAT=4;
+    const DRAW_LOGS=true,SKY_GRADIENT=true,GROUND_DRAW=true;
+    function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+    function formatTime(s){const m=Math.floor(s/60);const ss=s%60;return m+':'+String(ss).padStart(2,'0');}
+    class Fire{constructor(ctx,width,height,dpr){this.ctx=ctx;this.W=width;this.H=height;this.dpr=dpr;this.t=0;this.fuelStock=0;this.baseHeat=BASE_HEAT;this.boostHeat0=0;this.lastFeedAt=performance.now();this.lastUpdate=performance.now();this.particles=[];this.pool=[];this.maxParticles=420;this.spawnAcc=0;this.wind=0;this.windPhase=Math.random()*Math.PI*2;}
+      addFuel(){this.fuelStock=Math.min(100,this.fuelStock+10);const now=performance.now();const elapsed=now-this.lastFeedAt;const remain=this.boostHeat(elapsed);this.boostHeat0=remain+FEED_BOOST;this.lastFeedAt=now;for(let i=0;i<30;i++)this.spawnFlame(true);if(audio&&audio.paused){try{audio.currentTime=0;audio.play();}catch(e){}}}
+      boostHeat(elapsedMs){return this.boostHeat0*Math.exp(-elapsedMs/DECAY_TAU);}
+      currentHeat(now){const elapsed=now-this.lastFeedAt;let heat=this.baseHeat+this.boostHeat(elapsed);if(elapsed>IDLE_CLAMP_S*1000){heat=Math.min(heat,Math.max(IDLE_CLAMP_HEAT,BASE_HEAT));}return clamp(heat,BASE_HEAT,MAX_HEAT);}
+      update(dt){const now=performance.now();this.t+=dt;this.windPhase+=dt*0.0004;this.wind=Math.sin(this.windPhase)*0.25+Math.sin(this.windPhase*0.71)*0.1;const heat=this.currentHeat(now);this.fuelStock=clamp(this.fuelStock-(0.002+heat*0.0001)*dt,0,100);const spawnRate=2+heat*0.22;this.spawnAcc+=spawnRate*(dt/16.67);while(this.spawnAcc>=1){this.spawnFlame(false);if(Math.random()<0.22)this.spawnEmber();this.spawnAcc-=1;}for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life+=dt;if(p.type==='flame'){p.vx+=this.wind*0.002*dt;p.vy-=0.00065*dt;p.x+=p.vx*(dt*0.06);p.y+=p.vy*(dt*0.06);p.alpha=Math.max(0,0.95-p.life/p.max);p.size*=0.9975;if(p.life>p.max||p.alpha<=0||p.y<this.H*0.1)this.kill(i);}else{p.vx+=this.wind*0.001*dt;p.vy-=0.00022*dt;p.x+=p.vx*(dt*0.06);p.y+=p.vy*(dt*0.06);p.alpha=Math.max(0,1-p.life/p.max);if(p.life>p.max||p.alpha<=0||p.y<-12)this.kill(i);}}return{heat,fuel:this.fuelStock,seconds:Math.floor(this.t/1000)};}
+      spawnFlame(puff){if(this.particles.length>=this.maxParticles)return;const p=this.pool.pop()||{};const cx=this.W/2,baseY=this.H*0.82;const spread=40+this.wind*20;p.x=cx+(Math.random()-0.5)*spread;p.y=baseY+(Math.random()-0.5)*6;const up=(puff?2.7:2.0)+Math.random()*0.9;p.vx=this.wind*(0.35+Math.random()*0.4)+(Math.random()-0.5)*0.2;p.vy=-up-Math.random()*0.6;p.life=0;p.max=(puff?46:34)+Math.random()*20;p.size=(puff?20:14)+Math.random()*12;p.h=15+Math.random()*25;p.s=85+Math.random()*10;p.l=50+Math.random()*10;p.alpha=0.9;p.type='flame';this.particles.push(p);}
+      spawnEmber(){if(this.particles.length>=this.maxParticles)return;const e=this.pool.pop()||{};const cx=this.W/2,baseY=this.H*0.82;e.x=cx+(Math.random()-0.5)*28;e.y=baseY-10+(Math.random()-0.5)*10;e.vx=this.wind*(0.5+Math.random()*0.5)+(Math.random()-0.5)*0.2;e.vy=-1.5-Math.random()*0.8;e.life=0;e.max=120+Math.random()*120;e.size=2+Math.random()*2;e.alpha=1;e.type='ember';this.particles.push(e);}
+      kill(i){const p=this.particles[i];this.pool.push(p);this.particles[i]=this.particles[this.particles.length-1];this.particles.pop();}
+      draw(){const g=this.ctx,W=this.W,H=this.H;if(SKY_GRADIENT){const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#05060a');sky.addColorStop(1,'#0b0e14');g.fillStyle=sky;g.fillRect(0,0,W,H);}if(GROUND_DRAW){g.fillStyle='#151512';g.fillRect(0,H*0.8,W,H*0.2);}if(DRAW_LOGS){g.save();g.translate(W/2,H*0.83);g.rotate(-0.15);roundRect(g,-96,-11,192,22,12);g.fillStyle='#3a2f21';g.fill();g.restore();g.save();g.translate(W/2,H*0.83);g.rotate(0.25);roundRect(g,-92,-10,184,20,11);g.fillStyle='#3b2a1f';g.fill();g.restore();}g.globalCompositeOperation='lighter';for(let i=0;i<this.particles.length;i++){const p=this.particles[i];if(p.type==='flame'){const grad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);const c1=`hsla(${p.h},${p.s}%,${p.l}%,${p.alpha})`;const c2=`hsla(${Math.max(5,p.h-10)},${p.s}%,${Math.max(30,p.l-10)}%,0)`;grad.addColorStop(0,c1);grad.addColorStop(1,c2);g.fillStyle=grad;g.beginPath();g.arc(p.x,p.y,p.size,0,Math.PI*2);g.fill();}else{g.globalAlpha=p.alpha*0.85;g.beginPath();g.arc(p.x,p.y,p.size,0,Math.PI*2);g.fillStyle='#ffb347';g.fill();g.globalAlpha=1;}}g.globalCompositeOperation='source-over';const glow=g.createRadialGradient(W/2,H*0.83,0,W/2,H*0.83,130);glow.addColorStop(0,'rgba(255,180,80,0.06)');glow.addColorStop(1,'rgba(255,180,80,0)');g.fillStyle=glow;g.beginPath();g.arc(W/2,H*0.83,130,0,Math.PI*2);g.fill();}}
+    function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+    function fit(){const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));const rect=canvas.getBoundingClientRect();canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr);g.setTransform(dpr,0,0,dpr,0,0);if(fire){fire.W=rect.width;fire.H=rect.height;fire.dpr=dpr;}}
+    const rect0=document.getElementById('root').getBoundingClientRect();const dpr0=Math.max(1,Math.min(3,window.devicePixelRatio||1));canvas.width=Math.floor(rect0.width*dpr0);canvas.height=Math.floor(rect0.height*dpr0);g.setTransform(dpr0,0,0,dpr0,0,0);
+    let fire=new Fire(g,rect0.width,rect0.height,dpr0);let last=performance.now();
+    function loop(t){const dt=Math.min(40,t-last);last=t;const state=fire.update(dt);fire.draw();hudFuel.textContent=Math.round(state.fuel);hudHeat.textContent=Math.round(state.heat);hudClock.textContent=formatTime(state.seconds);requestAnimationFrame(loop);}requestAnimationFrame(loop);
+    window.addEventListener('resize',fit,{passive:true});
+    canvas.addEventListener('touchstart',onTap,{passive:false});canvas.addEventListener('mousedown',onTap);
+    function onTap(e){e.preventDefault();fire.addFuel();if(audio&&audio.paused){try{audio.currentTime=0;audio.play();}catch(_){}}}
+    resetBtn.addEventListener('click',function(){fire=new Fire(g,fire.W,fire.H,fire.dpr);});
+    requestAnimationFrame(fit);
+  })();
+  </script>
 </body>
 </html>
