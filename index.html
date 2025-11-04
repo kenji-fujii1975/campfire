@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>Calm Campfire – Relaxation</title>
+  <title>Calm Campfire – Gentle & Draggable Logs</title>
   <style>
     html, body { height: 100%; margin: 0; background: #0b0e14; }
     body { overflow: hidden; -webkit-user-select: none; user-select: none; }
@@ -21,7 +21,11 @@
 <body>
   <div id="root">
     <canvas id="c"></canvas>
-    <audio id="crackle" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Bonfire.ogg" loop preload="auto"></audio>
+    <!-- ループする環境音（iOSはジェスチャ後に解禁） -->
+    <audio id="bgCrackle" src="https://upload.wikimedia.org/wikipedia/commons/4/45/Bonfire.ogg" preload="auto" loop></audio>
+    <!-- 薪投入時のパチパチ・ワンショット（短い効果音） -->
+    <audio id="pop" src="https://upload.wikimedia.org/wikipedia/commons/5/59/Small_fire_crackle.ogg" preload="auto"></audio>
+
     <div class="hud">
       <div style="display:flex; gap:12px; align-items:center;">
         <div class="badge"><span style="opacity:.8">Fuel: </span><strong id="fuel">0</strong></div>
@@ -29,41 +33,396 @@
       </div>
       <div style="opacity:.9" id="clock">0:00</div>
     </div>
+
     <div class="footer">
-      <div class="hint">Tap to add wood · 放置でも燃え続ける（30秒で徐々に縮小／1分で熾火に）</div>
+      <div class="hint">薪をタップして掴み、中央の焚き火にスワイプで投入 → パチパチ。何もしなくても燃え続けます。</div>
       <div style="margin-top:8px">
         <button class="btn" id="resetBtn">Reset</button>
       </div>
     </div>
   </div>
+
   <script>
   (function(){
-    const canvas=document.getElementById('c');const g=canvas.getContext('2d',{alpha:true});
-    const audio=document.getElementById('crackle');const hudFuel=document.getElementById('fuel');
-    const hudHeat=document.getElementById('heat');const hudClock=document.getElementById('clock');
-    const resetBtn=document.getElementById('resetBtn');
-    const BASE_HEAT=8,MAX_HEAT=100,FEED_BOOST=28,DECAY_TAU=30000,IDLE_CLAMP_S=60,IDLE_CLAMP_HEAT=4;
-    const DRAW_LOGS=true,SKY_GRADIENT=true,GROUND_DRAW=true;
-    function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
-    function formatTime(s){const m=Math.floor(s/60);const ss=s%60;return m+':'+String(ss).padStart(2,'0');}
-    class Fire{constructor(ctx,width,height,dpr){this.ctx=ctx;this.W=width;this.H=height;this.dpr=dpr;this.t=0;this.fuelStock=0;this.baseHeat=BASE_HEAT;this.boostHeat0=0;this.lastFeedAt=performance.now();this.lastUpdate=performance.now();this.particles=[];this.pool=[];this.maxParticles=420;this.spawnAcc=0;this.wind=0;this.windPhase=Math.random()*Math.PI*2;}
-      addFuel(){this.fuelStock=Math.min(100,this.fuelStock+10);const now=performance.now();const elapsed=now-this.lastFeedAt;const remain=this.boostHeat(elapsed);this.boostHeat0=remain+FEED_BOOST;this.lastFeedAt=now;for(let i=0;i<30;i++)this.spawnFlame(true);if(audio&&audio.paused){try{audio.currentTime=0;audio.play();}catch(e){}}}
-      boostHeat(elapsedMs){return this.boostHeat0*Math.exp(-elapsedMs/DECAY_TAU);}
-      currentHeat(now){const elapsed=now-this.lastFeedAt;let heat=this.baseHeat+this.boostHeat(elapsed);if(elapsed>IDLE_CLAMP_S*1000){heat=Math.min(heat,Math.max(IDLE_CLAMP_HEAT,BASE_HEAT));}return clamp(heat,BASE_HEAT,MAX_HEAT);}
-      update(dt){const now=performance.now();this.t+=dt;this.windPhase+=dt*0.0004;this.wind=Math.sin(this.windPhase)*0.25+Math.sin(this.windPhase*0.71)*0.1;const heat=this.currentHeat(now);this.fuelStock=clamp(this.fuelStock-(0.002+heat*0.0001)*dt,0,100);const spawnRate=2+heat*0.22;this.spawnAcc+=spawnRate*(dt/16.67);while(this.spawnAcc>=1){this.spawnFlame(false);if(Math.random()<0.22)this.spawnEmber();this.spawnAcc-=1;}for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life+=dt;if(p.type==='flame'){p.vx+=this.wind*0.002*dt;p.vy-=0.00065*dt;p.x+=p.vx*(dt*0.06);p.y+=p.vy*(dt*0.06);p.alpha=Math.max(0,0.95-p.life/p.max);p.size*=0.9975;if(p.life>p.max||p.alpha<=0||p.y<this.H*0.1)this.kill(i);}else{p.vx+=this.wind*0.001*dt;p.vy-=0.00022*dt;p.x+=p.vx*(dt*0.06);p.y+=p.vy*(dt*0.06);p.alpha=Math.max(0,1-p.life/p.max);if(p.life>p.max||p.alpha<=0||p.y<-12)this.kill(i);}}return{heat,fuel:this.fuelStock,seconds:Math.floor(this.t/1000)};}
-      spawnFlame(puff){if(this.particles.length>=this.maxParticles)return;const p=this.pool.pop()||{};const cx=this.W/2,baseY=this.H*0.82;const spread=40+this.wind*20;p.x=cx+(Math.random()-0.5)*spread;p.y=baseY+(Math.random()-0.5)*6;const up=(puff?2.7:2.0)+Math.random()*0.9;p.vx=this.wind*(0.35+Math.random()*0.4)+(Math.random()-0.5)*0.2;p.vy=-up-Math.random()*0.6;p.life=0;p.max=(puff?46:34)+Math.random()*20;p.size=(puff?20:14)+Math.random()*12;p.h=15+Math.random()*25;p.s=85+Math.random()*10;p.l=50+Math.random()*10;p.alpha=0.9;p.type='flame';this.particles.push(p);}
-      spawnEmber(){if(this.particles.length>=this.maxParticles)return;const e=this.pool.pop()||{};const cx=this.W/2,baseY=this.H*0.82;e.x=cx+(Math.random()-0.5)*28;e.y=baseY-10+(Math.random()-0.5)*10;e.vx=this.wind*(0.5+Math.random()*0.5)+(Math.random()-0.5)*0.2;e.vy=-1.5-Math.random()*0.8;e.life=0;e.max=120+Math.random()*120;e.size=2+Math.random()*2;e.alpha=1;e.type='ember';this.particles.push(e);}
-      kill(i){const p=this.particles[i];this.pool.push(p);this.particles[i]=this.particles[this.particles.length-1];this.particles.pop();}
-      draw(){const g=this.ctx,W=this.W,H=this.H;if(SKY_GRADIENT){const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#05060a');sky.addColorStop(1,'#0b0e14');g.fillStyle=sky;g.fillRect(0,0,W,H);}if(GROUND_DRAW){g.fillStyle='#151512';g.fillRect(0,H*0.8,W,H*0.2);}if(DRAW_LOGS){g.save();g.translate(W/2,H*0.83);g.rotate(-0.15);roundRect(g,-96,-11,192,22,12);g.fillStyle='#3a2f21';g.fill();g.restore();g.save();g.translate(W/2,H*0.83);g.rotate(0.25);roundRect(g,-92,-10,184,20,11);g.fillStyle='#3b2a1f';g.fill();g.restore();}g.globalCompositeOperation='lighter';for(let i=0;i<this.particles.length;i++){const p=this.particles[i];if(p.type==='flame'){const grad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);const c1=`hsla(${p.h},${p.s}%,${p.l}%,${p.alpha})`;const c2=`hsla(${Math.max(5,p.h-10)},${p.s}%,${Math.max(30,p.l-10)}%,0)`;grad.addColorStop(0,c1);grad.addColorStop(1,c2);g.fillStyle=grad;g.beginPath();g.arc(p.x,p.y,p.size,0,Math.PI*2);g.fill();}else{g.globalAlpha=p.alpha*0.85;g.beginPath();g.arc(p.x,p.y,p.size,0,Math.PI*2);g.fillStyle='#ffb347';g.fill();g.globalAlpha=1;}}g.globalCompositeOperation='source-over';const glow=g.createRadialGradient(W/2,H*0.83,0,W/2,H*0.83,130);glow.addColorStop(0,'rgba(255,180,80,0.06)');glow.addColorStop(1,'rgba(255,180,80,0)');g.fillStyle=glow;g.beginPath();g.arc(W/2,H*0.83,130,0,Math.PI*2);g.fill();}}
-    function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
-    function fit(){const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));const rect=canvas.getBoundingClientRect();canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr);g.setTransform(dpr,0,0,dpr,0,0);if(fire){fire.W=rect.width;fire.H=rect.height;fire.dpr=dpr;}}
-    const rect0=document.getElementById('root').getBoundingClientRect();const dpr0=Math.max(1,Math.min(3,window.devicePixelRatio||1));canvas.width=Math.floor(rect0.width*dpr0);canvas.height=Math.floor(rect0.height*dpr0);g.setTransform(dpr0,0,0,dpr0,0,0);
-    let fire=new Fire(g,rect0.width,rect0.height,dpr0);let last=performance.now();
-    function loop(t){const dt=Math.min(40,t-last);last=t;const state=fire.update(dt);fire.draw();hudFuel.textContent=Math.round(state.fuel);hudHeat.textContent=Math.round(state.heat);hudClock.textContent=formatTime(state.seconds);requestAnimationFrame(loop);}requestAnimationFrame(loop);
-    window.addEventListener('resize',fit,{passive:true});
-    canvas.addEventListener('touchstart',onTap,{passive:false});canvas.addEventListener('mousedown',onTap);
-    function onTap(e){e.preventDefault();fire.addFuel();if(audio&&audio.paused){try{audio.currentTime=0;audio.play();}catch(_){}}}
-    resetBtn.addEventListener('click',function(){fire=new Fire(g,fire.W,fire.H,fire.dpr);});
+    const canvas = document.getElementById('c');
+    const g = canvas.getContext('2d', { alpha: true });
+    const bg = document.getElementById('bgCrackle');
+    const pop = document.getElementById('pop');
+    const hudFuel = document.getElementById('fuel');
+    const hudHeat = document.getElementById('heat');
+    const hudClock = document.getElementById('clock');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // ---- Parameters ----
+    const BASE_HEAT = 8;
+    const MAX_HEAT = 100;
+    const FEED_BOOST = 26;        // per log
+    const DECAY_TAU = 33000;      // 33s gentle decay
+    const IDLE_CLAMP_S = 60;
+    const IDLE_CLAMP_HEAT = 4;
+
+    const SKY_GRADIENT = true;
+    const GROUND_DRAW = true;
+    const DRAW_LOGS = true;
+
+    // Fire anchor at screen center
+    function fireAnchor(f){ return { x: f.W/2, y: f.H*0.5 }; }
+
+    // ---- Utils ----
+    function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+    function formatTime(s){ const m=Math.floor(s/60); const ss=s%60; return m+':'+String(ss).padStart(2,'0'); }
+    function dist(x1,y1,x2,y2){ const dx=x2-x1, dy=y2-y1; return Math.hypot(dx,dy); }
+
+    class Fire {
+      constructor(ctx, width, height, dpr){
+        this.ctx = ctx; this.W = width; this.H = height; this.dpr = dpr;
+        this.t = 0;
+        this.fuelStock = 0;
+        this.baseHeat = BASE_HEAT;
+        this.boostHeat0 = 0;
+        this.lastFeedAt = performance.now();
+
+        // gentle wind
+        this.wind = 0; this.windPhase = Math.random()*Math.PI*2;
+
+        // particles
+        this.particles = []; this.pool = []; this.maxParticles = 360; // fewer for gentle
+        this.spawnAcc = 0;
+      }
+
+      currentHeat(now){
+        const elapsed = now - this.lastFeedAt;
+        let heat = this.baseHeat + this.boostHeat0 * Math.exp(-elapsed / DECAY_TAU);
+        if (elapsed > IDLE_CLAMP_S*1000) heat = Math.min(heat, Math.max(IDLE_CLAMP_HEAT, BASE_HEAT));
+        return clamp(heat, BASE_HEAT, MAX_HEAT);
+      }
+
+      addFuel(amount=FEED_BOOST){
+        // Merge new boost into current decaying boost
+        const now = performance.now();
+        const elapsed = now - this.lastFeedAt;
+        const remain = this.boostHeat0 * Math.exp(-elapsed / DECAY_TAU);
+        this.boostHeat0 = remain + amount;
+        this.lastFeedAt = now;
+        this.fuelStock = clamp(this.fuelStock + 12, 0, 100);
+        for(let i=0;i<24;i++) this.spawnFlame(true);
+        // crackle one-shot (requires prior gesture on iOS)
+        try { pop.currentTime = 0; pop.play(); } catch(e){}
+      }
+
+      update(dt){
+        const now = performance.now();
+        this.t += dt;
+        // slow wind
+        this.windPhase += dt*0.00025;
+        this.wind = Math.sin(this.windPhase)*0.18 + Math.sin(this.windPhase*0.6)*0.08;
+
+        const heat = this.currentHeat(now);
+        this.fuelStock = clamp(this.fuelStock - (0.0012 + heat*0.00008)*dt, 0, 100);
+
+        // much gentler spawn
+        const spawnRate = 1.2 + heat*0.15;
+        this.spawnAcc += spawnRate * (dt/16.67);
+        while(this.spawnAcc >= 1){
+          this.spawnFlame(false);
+          if(Math.random() < 0.16) this.spawnEmber();
+          this.spawnAcc -= 1;
+        }
+
+        // particles
+        for(let i=this.particles.length-1;i>=0;i--){
+          const p = this.particles[i];
+          p.life += dt;
+          if(p.type==='flame'){
+            p.vx += this.wind * 0.0016 * dt;
+            p.vy -= 0.00045 * dt; // slower buoyancy
+            p.x += p.vx * (dt*0.05);
+            p.y += p.vy * (dt*0.05);
+            p.alpha = Math.max(0, 0.92 - p.life/p.max);
+            p.size *= 0.998;
+            if(p.life>p.max || p.alpha<=0 || p.y < this.H*0.05) this.kill(i);
+          }else{
+            p.vx += this.wind*0.0009*dt; p.vy -= 0.00018*dt;
+            p.x += p.vx * (dt*0.05); p.y += p.vy * (dt*0.05);
+            p.alpha = Math.max(0, 1 - p.life/p.max);
+            if(p.life>p.max || p.alpha<=0 || p.y < -12) this.kill(i);
+          }
+        }
+
+        return { heat, fuel: this.fuelStock, seconds: Math.floor(this.t/1000) };
+      }
+
+      spawnFlame(puff){
+        if(this.particles.length >= this.maxParticles) return;
+        const p = this.pool.pop() || {};
+        const anchor = fireAnchor(this);
+        const spread = 28 + this.wind*18;
+        p.x = anchor.x + (Math.random()-0.5)*spread;
+        p.y = anchor.y + (Math.random()-0.5)*6;
+        const up = (puff?2.2:1.6) + Math.random()*0.6; // slower upward
+        p.vx = this.wind*(0.25+Math.random()*0.3) + (Math.random()-0.5)*0.16;
+        p.vy = -up - Math.random()*0.45;
+        p.life = 0;
+        p.max = (puff?56:44) + Math.random()*24; // longer life
+        p.size = (puff?20:14) + Math.random()*10;
+        p.h = 18 + Math.random()*22; p.s = 85 + Math.random()*10; p.l = 52 + Math.random()*8;
+        p.alpha = 0.9; p.type='flame';
+        this.particles.push(p);
+      }
+
+      spawnEmber(){
+        if(this.particles.length >= this.maxParticles) return;
+        const e = this.pool.pop() || {};
+        const anchor = fireAnchor(this);
+        e.x = anchor.x + (Math.random()-0.5)*26;
+        e.y = anchor.y - 10 + (Math.random()-0.5)*10;
+        e.vx = this.wind*(0.42+Math.random()*0.4) + (Math.random()-0.5)*0.2;
+        e.vy = -1.2 - Math.random()*0.6;
+        e.life = 0; e.max = 160 + Math.random()*120; e.size = 2 + Math.random()*2;
+        e.alpha = 1; e.type='ember';
+        this.particles.push(e);
+      }
+
+      kill(i){
+        const p = this.particles[i];
+        this.pool.push(p);
+        this.particles[i] = this.particles[this.particles.length-1];
+        this.particles.pop();
+      }
+
+      draw(){
+        const g=this.ctx, W=this.W, H=this.H;
+        if (SKY_GRADIENT) {
+          const sky = g.createLinearGradient(0,0,0,H);
+          sky.addColorStop(0,'#05060a'); sky.addColorStop(1,'#0b0e14');
+          g.fillStyle=sky; g.fillRect(0,0,W,H);
+        }
+        if (GROUND_DRAW) {
+          g.fillStyle='#151512'; g.fillRect(0, H*0.8, W, H*0.2);
+        }
+
+        // logs on ground (drawn behind fire)
+        drawLooseLogs();
+
+        // base logs under fire anchor
+        if (DRAW_LOGS) {
+          const a = fireAnchor(this);
+          g.save(); g.translate(a.x, a.y+0.03*H); g.rotate(-0.15);
+          roundRect(g,-96,-11,192,22,12); g.fillStyle='#3a2f21'; g.fill(); g.restore();
+          g.save(); g.translate(a.x, a.y+0.03*H); g.rotate(0.25);
+          roundRect(g,-92,-10,184,20,11); g.fillStyle='#3b2a1f'; g.fill(); g.restore();
+        }
+
+        // flames & embers
+        g.globalCompositeOperation='lighter';
+        for(let i=0;i<this.particles.length;i++){
+          const p=this.particles[i];
+          if(p.type==='flame'){
+            const grad=g.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size);
+            const c1=`hsla(${p.h}, ${p.s}%, ${p.l}%, ${p.alpha})`;
+            const c2=`hsla(${Math.max(5,p.h-10)}, ${p.s}%, ${Math.max(30,p.l-10)}%, 0)`;
+            grad.addColorStop(0,c1); grad.addColorStop(1,c2);
+            g.fillStyle=grad; g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2); g.fill();
+          }else{
+            g.globalAlpha = p.alpha*0.85;
+            g.beginPath(); g.arc(p.x,p.y,p.size,0,Math.PI*2);
+            g.fillStyle='#ffb347'; g.fill();
+            g.globalAlpha = 1;
+          }
+        }
+        g.globalCompositeOperation='source-over';
+
+        // soft glow
+        const a = fireAnchor(this);
+        const glow=g.createRadialGradient(a.x,a.y,0,a.x,a.y,130);
+        glow.addColorStop(0,'rgba(255,180,80,0.06)');
+        glow.addColorStop(1,'rgba(255,180,80,0)');
+        g.fillStyle=glow; g.beginPath(); g.arc(a.x,a.y,130,0,Math.PI*2); g.fill();
+      }
+    }
+
+    // ---- Loose logs to drag ----
+    const looseLogs = [];
+    const LOG_MIN = 14, LOG_MAX = 34;
+    const PICK_RADIUS = 26;
+    const CONSUME_RADIUS = 90;
+
+    function spawnLooseLogs(fire, n=8){
+      looseLogs.length = 0;
+      const a = fireAnchor(fire);
+      const ringR = Math.min(fire.W, fire.H) * 0.28;
+      for(let i=0;i<n;i++){
+        const ang = (i/n)*Math.PI*2 + Math.random()*0.6;
+        const r = ringR * (0.75 + Math.random()*0.4);
+        const x = a.x + Math.cos(ang)*r;
+        const y = a.y + Math.sin(ang)*r;
+        const w = LOG_MIN + Math.random()*(LOG_MAX-LOG_MIN);
+        looseLogs.push({ x, y, w, grabbed:false, ox:0, oy:0 });
+      }
+    }
+
+    function drawLooseLogs(){
+      g.save();
+      for(const log of looseLogs){
+        g.save();
+        g.translate(log.x, log.y);
+        g.rotate((log.rot ??= (Math.random()*0.6-0.3)));
+        roundRect(g, -log.w, -log.w*0.16, log.w*2, log.w*0.32, log.w*0.16);
+        g.fillStyle = '#4a3a28';
+        g.fill();
+        g.restore();
+      }
+      g.restore();
+    }
+
+    function pickLog(x,y){
+      // choose nearest within PICK_RADIUS
+      let k=-1, best=1e9;
+      for(let i=0;i<looseLogs.length;i++){
+        const L=looseLogs[i];
+        const d=dist(x,y,L.x,L.y);
+        if(d<best && d<=PICK_RADIUS){ best=d; k=i; }
+      }
+      return k;
+    }
+
+    // ---- Canvas helpers ----
+    function roundRect(g,x,y,w,h,r){
+      g.beginPath(); g.moveTo(x+r,y);
+      g.arcTo(x+w,y, x+w,y+h, r);
+      g.arcTo(x+w,y+h, x,y+h, r);
+      g.arcTo(x,y+h, x,y, r);
+      g.arcTo(x,y, x+w,y, r);
+      g.closePath();
+    }
+
+    // ---- Init & Loop ----
+    function fit(){
+      const dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+      const rect=canvas.getBoundingClientRect();
+      canvas.width=Math.floor(rect.width*dpr);
+      canvas.height=Math.floor(rect.height*dpr);
+      g.setTransform(dpr,0,0,dpr,0,0);
+      if (fire){
+        fire.W=rect.width; fire.H=rect.height; fire.dpr=dpr;
+        if (looseLogs.length===0) spawnLooseLogs(fire);
+      }
+    }
+
+    const r0 = document.getElementById('root').getBoundingClientRect();
+    const dpr0 = Math.max(1, Math.min(3, window.devicePixelRatio||1));
+    canvas.width = Math.floor(r0.width*dpr0); canvas.height = Math.floor(r0.height*dpr0);
+    g.setTransform(dpr0,0,0,dpr0,0,0);
+
+    let fire = new Fire(g, r0.width, r0.height, dpr0);
+    spawnLooseLogs(fire);
+
+    let last = performance.now();
+    function loop(t){
+      const dt = Math.min(40, t-last); last = t;
+      const state = fire.update(dt);
+      fire.draw();
+      hudFuel.textContent = Math.round(state.fuel);
+      hudHeat.textContent = Math.round(state.heat);
+      hudClock.textContent = formatTime(state.seconds);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    window.addEventListener('resize', fit, { passive:true });
+
+    // ---- Input (drag logs) ----
+    const touch = { id:null, grabbing:-1, dx:0, dy:0 };
+    function unlockAudio(){
+      try { if (bg.paused) { bg.currentTime=0; bg.play(); } } catch(e){}
+      try { pop.play().then(()=>{ pop.pause(); pop.currentTime=0; }).catch(()=>{}); } catch(e){}
+    }
+
+    canvas.addEventListener('touchstart', (e)=>{
+      const t = e.changedTouches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = t.clientX - rect.left, y = t.clientY - rect.top;
+      const i = pickLog(x,y);
+      if(i>=0){
+        e.preventDefault();
+        touch.id = t.identifier; touch.grabbing = i;
+        looseLogs[i].grabbed = true;
+        looseLogs[i].ox = x - looseLogs[i].x;
+        looseLogs[i].oy = y - looseLogs[i].y;
+        unlockAudio();
+      }
+    }, { passive:false });
+
+    canvas.addEventListener('touchmove', (e)=>{
+      for(const t of e.changedTouches){
+        if (t.identifier !== touch.id) continue;
+        const rect = canvas.getBoundingClientRect();
+        const x = t.clientX - rect.left, y = t.clientY - rect.top;
+        if (touch.grabbing>=0){
+          const L = looseLogs[touch.grabbing];
+          L.x = x - L.ox; L.y = y - L.oy;
+          e.preventDefault();
+        }
+      }
+    }, { passive:false });
+
+    canvas.addEventListener('touchend', (e)=>{
+      for(const t of e.changedTouches){
+        if (t.identifier !== touch.id) continue;
+        finishGrab();
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e)=>{
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      const i = pickLog(x,y);
+      if(i>=0){
+        e.preventDefault();
+        touch.id = 'mouse'; touch.grabbing = i;
+        const L=looseLogs[i]; L.grabbed=true; L.ox = x-L.x; L.oy=y-L.y;
+        unlockAudio();
+        window.addEventListener('mousemove', onMouseMove, { passive:false });
+        window.addEventListener('mouseup', onMouseUp);
+      }
+    });
+
+    function onMouseMove(e){
+      if (touch.grabbing<0) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left, y = e.clientY - rect.top;
+      const L = looseLogs[touch.grabbing];
+      L.x = x - L.ox; L.y = y - L.oy;
+      e.preventDefault();
+    }
+    function onMouseUp(){
+      if (touch.grabbing>=0) finishGrab();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
+
+    function finishGrab(){
+      const idx = touch.grabbing;
+      if (idx>=0){
+        const a = fireAnchor(fire);
+        const L = looseLogs[idx];
+        if (dist(L.x,L.y,a.x,a.y) <= CONSUME_RADIUS){
+          // consume the log
+          looseLogs.splice(idx,1);
+          fire.addFuel(FEED_BOOST);
+        }else{
+          L.grabbed = false;
+        }
+      }
+      touch.id=null; touch.grabbing=-1;
+    }
+
+    // reset
+    resetBtn.addEventListener('click', ()=>{
+      fire = new Fire(g, fire.W, fire.H, fire.dpr);
+      spawnLooseLogs(fire);
+    });
+
+    // first fit
     requestAnimationFrame(fit);
   })();
   </script>
